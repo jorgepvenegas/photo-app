@@ -16,7 +16,7 @@ class EmailService:
         """Send email verification link."""
         if not settings.RESEND_API_KEY:
             # In development, just print the token
-            print(f"\n[DEV] Verification email to {email}: {settings.APP_URL}/verify-email?token={token}\n")
+            print(f"\n[DEV] Verification email to {email}: {settings.FRONTEND_URL}/verify-email?token={token}\n")
             return True
         
         try:

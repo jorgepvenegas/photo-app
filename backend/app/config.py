@@ -5,7 +5,6 @@ from functools import lru_cache
 class Settings(BaseSettings):
     # App
     APP_NAME: str = "PhotoApp"
-    APP_URL: str = "http://localhost"
     FRONTEND_URL: str = "http://localhost"
     DEBUG: bool = True
     
