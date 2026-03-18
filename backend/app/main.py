@@ -16,6 +16,8 @@ async def lifespan(app: FastAPI):
     print(f"🚀 Starting {settings.APP_NAME}")
     print(f"   Environment: {'Development' if settings.DEBUG else 'Production'}")
     print(f"   Database: {settings.DATABASE_URL.split('@')[-1]}")
+    print(f"   FRONTEND_URL: {settings.FRONTEND_URL}")
+    print(f"   APP_URL: {settings.APP_URL}")
     
     # Create tables if they don't exist (for dev)
     # In production, use Alembic migrations
@@ -44,6 +46,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         settings.FRONTEND_URL,
+        settings.APP_URL,
         "http://localhost",
         "http://localhost:5173",
         "http://localhost:3000",
