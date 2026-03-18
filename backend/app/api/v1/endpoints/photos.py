@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func
 from sqlalchemy.orm import selectinload
-from typing import List
+from typing import List, Optional
 import uuid
 
 from app.database import get_async_session
 from app.models import Photo, Comment, User
 from app.schemas import PhotoCreate, PhotoUpdate, PhotoRead, PhotoDetail, PhotoList
-from app.api.v1.endpoints.auth import current_verified_user
+from app.api.v1.endpoints.auth import current_verified_user, current_optional_user
 
 router = APIRouter()
 
@@ -78,7 +78,7 @@ async def list_my_photos(
 async def get_photo(
     photo_id: uuid.UUID,
     session: AsyncSession = Depends(get_async_session),
-    current_user: User = Depends(current_verified_user)
+    current_user: Optional[User] = Depends(current_optional_user)
 ):
     """Get photo details."""
     query = select(Photo).where(Photo.id == photo_id).options(
@@ -87,11 +87,11 @@ async def get_photo(
     )
     result = await session.execute(query)
     photo = result.scalar_one_or_none()
-    
+
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
-    
-    if not photo.is_public and photo.user_id != current_user.id:
+
+    if not photo.is_public and (not current_user or photo.user_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized to view this photo")
     
     return PhotoDetail(

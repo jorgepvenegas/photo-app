@@ -80,6 +80,7 @@ fastapi_users = FastAPIUsers[User, uuid.UUID](
 # Dependency to get current user
 current_active_user = fastapi_users.current_user(active=True)
 current_verified_user = fastapi_users.current_user(active=True, verified=True)
+current_optional_user = fastapi_users.current_user(active=True, verified=True, optional=True)
 
 
 # Include FastAPI Users routers (they already have their own prefixes)

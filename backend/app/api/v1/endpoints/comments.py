@@ -3,11 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func
 from sqlalchemy.orm import selectinload
 import uuid
+from typing import Optional
 
 from app.database import get_async_session
 from app.models import Comment, Photo, User
 from app.schemas import CommentCreate, CommentUpdate, CommentRead, CommentList
-from app.api.v1.endpoints.auth import current_verified_user
+from app.api.v1.endpoints.auth import current_verified_user, current_optional_user
 
 router = APIRouter()
 
@@ -18,18 +19,18 @@ async def list_comments(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     session: AsyncSession = Depends(get_async_session),
-    current_user: User = Depends(current_verified_user)
+    current_user: Optional[User] = Depends(current_optional_user)
 ):
     """Get comments for a photo."""
     # Check photo exists and is accessible
     photo_query = select(Photo).where(Photo.id == photo_id)
     photo_result = await session.execute(photo_query)
     photo = photo_result.scalar_one_or_none()
-    
+
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
-    
-    if not photo.is_public and photo.user_id != current_user.id:
+
+    if not photo.is_public and (not current_user or photo.user_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized to view comments on this photo")
     
     # Get comments
