@@ -67,7 +67,7 @@ async def confirm_upload(
         title=confirm.title,
         description=confirm.description,
         storage_key=confirm.storage_key,
-        storage_url=storage_service._get_public_url(confirm.storage_key),
+        storage_url=confirm.storage_key,
         mime_type=confirm.mime_type,
         file_size=confirm.file_size,
         width=confirm.width,
@@ -108,19 +108,14 @@ async def generate_thumbnails_task(photo_id: uuid.UUID, storage_key: str):
             if not photo:
                 return
             
-            # For now, set placeholder URLs
+            # For now, set placeholder keys
             # In production, generate real thumbnails
-            base_url = photo.storage_url.rsplit('/', 1)[0]
+            key_dir = photo.storage_key.rsplit('/', 1)[0]
             filename = photo.storage_key.rsplit('/', 1)[-1].rsplit('.', 1)[0]
-            
-            photo.thumb_small_key = f"{photo.storage_key.rsplit('/', 1)[0]}/thumb_small_{filename}.webp"
-            photo.thumb_small_url = f"{base_url}/thumb_small_{filename}.webp"
-            
-            photo.thumb_medium_key = f"{photo.storage_key.rsplit('/', 1)[0]}/thumb_medium_{filename}.webp"
-            photo.thumb_medium_url = f"{base_url}/thumb_medium_{filename}.webp"
-            
-            photo.thumb_large_key = f"{photo.storage_key.rsplit('/', 1)[0]}/thumb_large_{filename}.webp"
-            photo.thumb_large_url = f"{base_url}/thumb_large_{filename}.webp"
+
+            photo.thumb_small_key = f"{key_dir}/thumb_small_{filename}.webp"
+            photo.thumb_medium_key = f"{key_dir}/thumb_medium_{filename}.webp"
+            photo.thumb_large_key = f"{key_dir}/thumb_large_{filename}.webp"
             
             await session.commit()
     

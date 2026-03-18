@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, model_validator
 from fastapi_users.schemas import BaseUser, BaseUserCreate, BaseUserUpdate
 
 
@@ -57,7 +57,11 @@ class PhotoUpdate(BaseModel):
 class PhotoRead(PhotoBase):
     id: uuid.UUID
     user_id: uuid.UUID
-    storage_url: str
+    storage_key: str
+    storage_url: str = ""
+    thumb_small_key: Optional[str] = None
+    thumb_medium_key: Optional[str] = None
+    thumb_large_key: Optional[str] = None
     thumb_small_url: Optional[str] = None
     thumb_medium_url: Optional[str] = None
     thumb_large_url: Optional[str] = None
@@ -66,8 +70,22 @@ class PhotoRead(PhotoBase):
     file_size: int
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="after")
+    def build_urls(self):
+        from app.config import get_settings
+        base = get_settings().R2_PUBLIC_URL
+        if base and self.storage_key:
+            self.storage_url = f"{base}/{self.storage_key}"
+        if base and self.thumb_small_key:
+            self.thumb_small_url = f"{base}/{self.thumb_small_key}"
+        if base and self.thumb_medium_key:
+            self.thumb_medium_url = f"{base}/{self.thumb_medium_key}"
+        if base and self.thumb_large_key:
+            self.thumb_large_url = f"{base}/{self.thumb_large_key}"
+        return self
 
 
 class PhotoDetail(PhotoRead):
