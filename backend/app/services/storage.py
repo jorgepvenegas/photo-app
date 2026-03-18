@@ -76,6 +76,28 @@ class StorageService:
             print(f"Failed to generate presigned URL: {e}")
             return None
     
+    async def download_file(self, key: str) -> Optional[bytes]:
+        """Download file from storage."""
+        if not self.client:
+            return None
+        try:
+            response = self.client.get_object(Bucket=self.bucket, Key=key)
+            return response['Body'].read()
+        except ClientError as e:
+            print(f"Failed to download file: {e}")
+            return None
+
+    async def upload_file(self, key: str, data: bytes, content_type: str = "image/webp") -> bool:
+        """Upload file to storage."""
+        if not self.client:
+            return False
+        try:
+            self.client.put_object(Bucket=self.bucket, Key=key, Body=data, ContentType=content_type)
+            return True
+        except ClientError as e:
+            print(f"Failed to upload file: {e}")
+            return False
+
     async def delete_file(self, key: str) -> bool:
         """Delete file from storage."""
         if not self.client:

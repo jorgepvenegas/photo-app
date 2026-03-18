@@ -90,28 +90,35 @@ async def generate_thumbnails_task(photo_id: uuid.UUID, storage_key: str):
     import asyncio
     from app.database import async_session_maker
     from app.services.storage import storage_service
-    
-    # Wait a moment for the file to be fully available in R2
+
     await asyncio.sleep(2)
-    
+
     try:
-        # Download original from R2
-        # In production, this would download the file
-        # For now, we'll skip this step since we need to implement download
-        # This is a placeholder for the async thumbnail generation
-        
+        original = await storage_service.download_file(storage_key)
+        if not original:
+            print(f"Failed to download original for photo {photo_id}")
+            return
+
+        key_dir = storage_key.rsplit('/', 1)[0]
+        filename = storage_key.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+
         async with async_session_maker() as session:
             query = select(Photo).where(Photo.id == photo_id)
             result = await session.execute(query)
             photo = result.scalar_one_or_none()
-            
             if not photo:
                 return
-            
-            # TODO: implement real thumbnail generation and upload to R2
-            pass
-            
+
+            for size_name, attr in [("small", "thumb_small_key"), ("medium", "thumb_medium_key"), ("large", "thumb_large_key")]:
+                thumb_data = image_service.create_thumbnail(original, size_name)
+                if thumb_data:
+                    thumb_key = f"{key_dir}/thumb_{size_name}_{filename}.webp"
+                    uploaded = await storage_service.upload_file(thumb_key, thumb_data)
+                    if uploaded:
+                        setattr(photo, attr, thumb_key)
+
             await session.commit()
-    
+            print(f"Thumbnails generated for photo {photo_id}")
+
     except Exception as e:
         print(f"Failed to generate thumbnails for photo {photo_id}: {e}")
