@@ -108,14 +108,8 @@ async def generate_thumbnails_task(photo_id: uuid.UUID, storage_key: str):
             if not photo:
                 return
             
-            # For now, set placeholder keys
-            # In production, generate real thumbnails
-            key_dir = photo.storage_key.rsplit('/', 1)[0]
-            filename = photo.storage_key.rsplit('/', 1)[-1].rsplit('.', 1)[0]
-
-            photo.thumb_small_key = f"{key_dir}/thumb_small_{filename}.webp"
-            photo.thumb_medium_key = f"{key_dir}/thumb_medium_{filename}.webp"
-            photo.thumb_large_key = f"{key_dir}/thumb_large_{filename}.webp"
+            # TODO: implement real thumbnail generation and upload to R2
+            pass
             
             await session.commit()
     
