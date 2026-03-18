@@ -29,6 +29,10 @@
             </div>
           </div>
           
+          <div v-if="fileError" class="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-md">
+            {{ fileError }}
+          </div>
+
           <!-- Preview -->
           <div v-if="previewUrl" class="mb-6">
             <img :src="previewUrl" alt="Preview" class="max-h-64 rounded-lg" />
@@ -86,15 +90,32 @@ const form = reactive({
   is_public: true,
 })
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const fileError = ref<string | null>(null)
+
 const handleFileSelect = (event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-  
-  if (file) {
-    selectedFile.value = file
-    previewUrl.value = URL.createObjectURL(file)
-    form.title = file.name.replace(/\.[^/.]+$/, '') // Remove extension
+  fileError.value = null
+
+  if (!file) return
+
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    fileError.value = 'Invalid file type. Allowed: JPG, PNG, GIF, WEBP'
+    input.value = ''
+    return
   }
+
+  if (file.size > MAX_FILE_SIZE) {
+    fileError.value = `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max: 10MB`
+    input.value = ''
+    return
+  }
+
+  selectedFile.value = file
+  previewUrl.value = URL.createObjectURL(file)
+  form.title = file.name.replace(/\.[^/.]+$/, '')
 }
 
 const handleUpload = async () => {
