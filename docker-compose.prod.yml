@@ -1,0 +1,74 @@
+version: '3.8'
+
+# Production Docker Compose using GHCR images
+# Usage: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: photoapp-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-photoapp}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-photoapp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - photoapp-network
+
+  backend:
+    image: ghcr.io/${GITHUB_USERNAME:-yourusername}/photo-app/backend:latest
+    container_name: photoapp-backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD}@postgres/${DB_NAME:-photoapp}
+      JWT_SECRET: ${JWT_SECRET}
+      SECRET_KEY: ${SECRET_KEY}
+      R2_ENDPOINT: ${R2_ENDPOINT}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL}
+      APP_URL: ${APP_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      DEBUG: ${DEBUG:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - photoapp-network
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/${GITHUB_USERNAME:-yourusername}/photo-app/frontend:latest
+    container_name: photoapp-frontend
+    environment:
+      VITE_API_URL: /api/v1
+    networks:
+      - photoapp-network
+    restart: unless-stopped
+
+  nginx:
+    image: ghcr.io/${GITHUB_USERNAME:-yourusername}/photo-app/nginx:latest
+    container_name: photoapp-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - photoapp-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  photoapp-network:
+    driver: bridge
